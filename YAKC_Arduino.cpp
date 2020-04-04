@@ -188,7 +188,37 @@ void update_system_state() {
   digitalWrite(latchPin, HIGH);
 }
 
-void check_buttons_state() {
+void send_state_to_serial() {
+  
+  if (SAS) {
+    Serial.write('A');
+  } else {
+    Serial.write('B');
+  }
+
+  if (RCS) {
+    Serial.write('C');
+  } else {
+    Serial.write('D');
+  }
+
+  if (speed_mode == ORBIT)                Serial.write('E');
+  else if (speed_mode == TARGET)          Serial.write('F');
+  else if (speed_mode == SURFACE)         Serial.write('G');
+
+  if (sas_mode == PROGRADE)               Serial.write('H');
+  else if (sas_mode == RETROGRADE)        Serial.write('I');
+  else if (sas_mode == NORMAL)            Serial.write('J');
+  else if (sas_mode == ANTI_NORMAL)       Serial.write('K');
+  else if (sas_mode == RADIAL)            Serial.write('L');
+  else if (sas_mode == ANTI_RADIAL)       Serial.write('M');
+  else if (sas_mode == STABILITY_ASSIST)  Serial.write('N');
+  else if (sas_mode == MANEUVER)          Serial.write('O');
+  else if (sas_mode == TO_TARGET)         Serial.write('P');
+  else if (sas_mode == ANTI_TARGET)       Serial.write('Q');
+}
+
+void check_and_send_buttons_state() {
   
   bool FWD_press = digitalRead(FWD_button);
   bool RCS_press = digitalRead(RCS_button);
@@ -205,25 +235,152 @@ void check_buttons_state() {
   bool Node_press = digitalRead(Node_button);
   bool MAN_SAS_press = digitalRead(MAN_SAS_button);
 
+  if (RCS_press) {
+    if (!RCS_button_pressed) {
+      RCS = !RCS;
+      RCS_button_pressed = true;
+      send_state_to_serial();
+    }
+  } else {
+    RCS_button_pressed = false;
+  }
+
   if (SAS_press) {
     if (!SAS_button_pressed) {
-      state_changed = true;
       SAS = !SAS;
       SAS_button_pressed = true;
+      send_state_to_serial();
     }
   } else {
     SAS_button_pressed = false;
   }
-}
 
-void send_state_to_serial() {
-  
+  if (Mode_press) {
+    if (!Mode_button_pressed) {
+      if (control_mode == MODE_SAS)
+        control_mode = MODE_RCS;
+      else
+        control_mode = MODE_SAS;
+      Mode_button_pressed = true;
+    }
+  } else {
+    Mode_button_pressed = false;
+  }
+
+  if (Referential_press) {
+    if (!Referential_button_pressed) {
+      if (speed_mode == ORBIT) speed_mode = TARGET;
+      else if (speed_mode == TARGET) speed_mode = SURFACE;
+      else if (speed_mode == SURFACE) speed_mode = ORBIT;
+      send_state_to_serial();
+      Referential_button_pressed = true;
+    }
+  } else {
+    Referential_button_pressed = false;
+  }
+
+  // In SAS mode
+  if (control_mode == MODE_SAS) {
+    if (FWD_press) {
+      if (!FWD_button_pressed) {
+        sas_mode = PROGRADE;
+        send_state_to_serial();
+        FWD_button_pressed = true;
+      } 
+    } else {
+      FWD_button_pressed = false;
+    }
+    if (BWD_press) {
+      if (!BWD_button_pressed) {
+        sas_mode = RETROGRADE;
+        send_state_to_serial();
+        BWD_button_pressed = true;
+      } 
+    } else {
+      BWD_button_pressed = false;
+    }
+    if (UP_press) {
+      if (!UP_button_pressed) {
+        sas_mode = NORMAL;
+        send_state_to_serial();
+        UP_button_pressed = true;
+      } 
+    } else {
+      UP_button_pressed = false;
+    }
+    if (DOWN_press) {
+      if (!DOWN_button_pressed) {
+        sas_mode = ANTI_NORMAL;
+        send_state_to_serial();
+        DOWN_button_pressed = true;
+      } 
+    } else {
+      DOWN_button_pressed = false;
+    }
+    if (LEFT_press) {
+      if (!LEFT_button_pressed) {
+        sas_mode = RADIAL;
+        send_state_to_serial();
+        LEFT_button_pressed = true;
+      } 
+    } else {
+      LEFT_button_pressed = false;
+    }
+    if (RIGHT_press) {
+      if (!RIGHT_button_pressed) {
+        sas_mode = ANTI_RADIAL;
+        send_state_to_serial();
+        RIGHT_button_pressed = true;
+      } 
+    } else {
+      RIGHT_button_pressed = false;
+    }
+    if (MAN_SAS_press) {
+      if (!MAN_SAS_button_pressed) {
+        sas_mode = STABILITY_ASSIST;
+        send_state_to_serial();
+        MAN_SAS_button_pressed = true;
+      } 
+    } else {
+      MAN_SAS_button_pressed = false;
+    }
+    if (Node_press) {
+      if (!Node_button_pressed) {
+        sas_mode = MANEUVER;
+        send_state_to_serial();
+        Node_button_pressed = true;
+      } 
+    } else {
+      Node_button_pressed = false;
+    }
+    if (TGT_pro_press) {
+      if (!TGT_pro_button_pressed) {
+        sas_mode = TO_TARGET;
+        send_state_to_serial();
+        TGT_pro_button_pressed = true;
+      } 
+    } else {
+      TGT_pro_button_pressed = false;
+    }
+    if (TGT_retro_press) {
+      if (!TGT_retro_button_pressed) {
+        sas_mode = ANTI_TARGET;
+        send_state_to_serial();
+        TGT_retro_button_pressed = true;
+      } 
+    } else {
+      TGT_retro_button_pressed = false;
+    }
+    
+  } else { // In RCS mode
+    // todo
+  }
 }
 
 void setup() {
   // Serial connection setup
   Serial.begin(9600);
-  Serial.setTimeout(100);
+  Serial.setTimeout(50);
 
   // Pin mode setup
   pinMode(latchPin, OUTPUT);
@@ -254,10 +411,7 @@ void loop() {
   
   update_system_state();
 
-  check_buttons_state();
-
-  if (state_changed) send_state_to_serial();
-  state_changed = false;
+  check_and_send_buttons_state();
 
   /*
   bool SAS_press = digitalRead(SAS_button) == HIGH;
