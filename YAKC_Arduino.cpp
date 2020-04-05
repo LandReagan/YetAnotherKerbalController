@@ -81,10 +81,10 @@ void process_incoming_serial() {
   while (Serial.available() > 0) {
     char data = Serial.read();
 
-    if (data == 'A') RCS = true;
-    else if (data == 'B') RCS = false;
-    else if (data == 'C') SAS = true;
-    else if (data == 'D') SAS = false;
+    if (data == 'A') SAS = true;
+    else if (data == 'B') SAS = false;
+    else if (data == 'C') RCS = true;
+    else if (data == 'D') RCS = false;
 
     else if (data == 'E') speed_mode = ORBIT;
     else if (data == 'F') speed_mode = TARGET;
@@ -191,31 +191,31 @@ void update_system_state() {
 void send_state_to_serial() {
   
   if (SAS) {
-    Serial.write('A');
+    Serial.print('A');
   } else {
-    Serial.write('B');
+    Serial.print('B');
   }
 
   if (RCS) {
-    Serial.write('C');
+    Serial.print('C');
   } else {
-    Serial.write('D');
+    Serial.print('D');
   }
 
-  if (speed_mode == ORBIT)                Serial.write('E');
-  else if (speed_mode == TARGET)          Serial.write('F');
-  else if (speed_mode == SURFACE)         Serial.write('G');
+  if (speed_mode == ORBIT)                Serial.print('E');
+  else if (speed_mode == TARGET)          Serial.print('F');
+  else if (speed_mode == SURFACE)         Serial.print('G');
 
-  if (sas_mode == PROGRADE)               Serial.write('H');
-  else if (sas_mode == RETROGRADE)        Serial.write('I');
-  else if (sas_mode == NORMAL)            Serial.write('J');
-  else if (sas_mode == ANTI_NORMAL)       Serial.write('K');
-  else if (sas_mode == RADIAL)            Serial.write('L');
-  else if (sas_mode == ANTI_RADIAL)       Serial.write('M');
-  else if (sas_mode == STABILITY_ASSIST)  Serial.write('N');
-  else if (sas_mode == MANEUVER)          Serial.write('O');
-  else if (sas_mode == TO_TARGET)         Serial.write('P');
-  else if (sas_mode == ANTI_TARGET)       Serial.write('Q');
+  if (sas_mode == PROGRADE)               Serial.print('H');
+  else if (sas_mode == RETROGRADE)        Serial.print('I');
+  else if (sas_mode == NORMAL)            Serial.print('J');
+  else if (sas_mode == ANTI_NORMAL)       Serial.print('K');
+  else if (sas_mode == RADIAL)            Serial.print('L');
+  else if (sas_mode == ANTI_RADIAL)       Serial.print('M');
+  else if (sas_mode == STABILITY_ASSIST)  Serial.print('N');
+  else if (sas_mode == MANEUVER)          Serial.print('O');
+  else if (sas_mode == TO_TARGET)         Serial.print('P');
+  else if (sas_mode == ANTI_TARGET)       Serial.print('Q');
 }
 
 void check_and_send_buttons_state() {
@@ -380,7 +380,7 @@ void check_and_send_buttons_state() {
 void setup() {
   // Serial connection setup
   Serial.begin(9600);
-  Serial.setTimeout(50);
+  Serial.setTimeout(10);
 
   // Pin mode setup
   pinMode(latchPin, OUTPUT);
